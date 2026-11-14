@@ -18,8 +18,8 @@ Kör så här:
 ```bash
 terraform init
 terraform apply
-sudo pwsh -File ./skapa-anvandare.ps1
-sudo pwsh -File ./skapa-anvandare.ps1 -Remove   # städa
+sudo pwsh -File ./create-users.ps1
+sudo pwsh -File ./create-users.ps1 -Remove
 ```
 
 ## Resultat
