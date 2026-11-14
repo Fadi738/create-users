@@ -72,7 +72,7 @@ function New-SystemUser {
 }
 
 # Function 5: verifies that the user and the home directory exist
-function Verify-User {
+function Confirm-User {
     param([Parameter(Mandatory)][string]$Name)
 
     $exists     = Test-UserExists -Name $Name
@@ -131,7 +131,7 @@ try {
         # Step 2: verify
         $succeeded = 0
         foreach ($u in $users) {
-            if (Verify-User -Name $u.name) { $succeeded++ }
+            if (Confirm-User -Name $u.name) { $succeeded++ }
         }
         Write-Log "Verification done: $succeeded of $($users.Count) users OK"
 
