@@ -15,17 +15,17 @@ variable "base_dir" {
   default     = "./output"
 }
 
-variable "users" {
-  description = "Users that the PowerShell script should create"
-  type = list(object({
-    name        = string
-    description = string
-  }))
-  default = [
-    { name = "kurs-anna", description = "Test user Anna" },
-    { name = "kurs-bo", description = "Test user Bo" },
-    { name = "kurs-cleo", description = "Test user Cleo" },
-  ]
+variable "users_file" {
+  description = "CSV file with the users to create (columns: name,description)"
+  type        = string
+  default     = "./users.csv"
+}
+
+# ---------- Locals ----------
+
+# Read the CSV file and turn every row into an object with name and description
+locals {
+  users = csvdecode(file(var.users_file))
 }
 
 # ---------- Resources ----------
@@ -33,7 +33,7 @@ variable "users" {
 # Resource 1: configuration file with the user list (JSON)
 resource "local_file" "users_config" {
   filename = "${var.base_dir}/config/users.json"
-  content  = jsonencode({ users = var.users })
+  content  = jsonencode({ users = local.users })
 }
 
 # Resource 2: logs directory (Terraform creates the folder when the file is created)
@@ -56,5 +56,5 @@ output "logs_directory" {
 
 output "users_to_create" {
   description = "Users to be created by PowerShell"
-  value       = [for u in var.users : u.name]
+  value       = [for u in local.users : u.name]
 }
