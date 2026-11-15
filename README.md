@@ -47,19 +47,22 @@ sudo pwsh -File ./create-users.ps1 -Remove   # städar bort användarna igen
 ```
 
 ## Resultat
+
 Terraform skapade konfigurationsfilen och loggmappen, och PowerShell-skriptet skapade och verifierade användarna.
 
 **Utskrift från `terraform apply`:**
 
+Utskriften är från en körning efter att filerna redan skapats av en tidigare `terraform apply`, därför står det `No changes`.
+
 ```
+local_file.users_config: Refreshing state... [id=8dc7af446205cb60949b6e1cf07c53f58867f9d3]
 local_file.logs_dir: Refreshing state... [id=c2309ef318757cc4abe23a1c140f5a886db7debf]
-local_file.users_config: Refreshing state... [id=ddf56715c82d2d23b18b1d52770711db90ea55fd]
 
 No changes. Your infrastructure matches the configuration.
 
 Terraform has compared your real infrastructure against your configuration and found no differences, so no changes are needed.
 
-Apply complete! Resources: 0 added, 0 changed, 0 destroyed.
+Apply complete! Resources: 0 added, 0 changed, 0 destroyed.   
 
 Outputs:
 
@@ -69,7 +72,9 @@ users_to_create = [
   "fadi.akrawi",
   "gabriel.touma",
   "lahoud.touma",
+  "Björn",
 ]
+
 ```
 
 **Utskrift från PowerShell-skriptet:**
@@ -99,13 +104,20 @@ sudo pwsh ./create-users.ps1
 [2026-11-15 01:44:06] [INFO] OK: 'lahoud.touma' exists and has home directory /home/lahoud.touma
 [2026-11-15 01:44:06] [ERROR] FAIL: 'Björn' is missing or has no home directory
 [2026-11-15 01:44:06] [INFO] Verification done: 3 of 4 users OK
+
 ```
+**Förklaring av resultatet:** `Björn` är ett ogiltigt användarnamn (stor bokstav och ö), så valideringen i `Test-ValidUsername` stoppade just det kontot med ett felmeddelande innan `useradd` kördes. De tre övriga användarna skapades och verifierades, därför står det `Verification done: 3 of 4 users OK`. Resultatet visar att valideringen fungerar och att en felaktig rad inte stoppar resten av körningen.
 
 **Kontroll i Linux:**
 
 ```
+id fadi.akrawi
 uid=1001(fadi.akrawi) gid=1001(fadi.akrawi) groups=1001(fadi.akrawi)
+
+id gabriel.touma
 uid=1002(gabriel.touma) gid=1002(gabriel.touma) groups=1002(gabriel.touma)
+
+id lahoud.touma
 uid=1003(lahoud.touma) gid=1003(lahoud.touma) groups=1003(lahoud.touma)
 
 ls /home/
@@ -115,11 +127,14 @@ fadi.akrawi  firo  gabriel.touma  lahoud.touma
 Om skriptet körs en gång till hoppar det över användare som redan finns och loggar `already exists, skipping`, så det går att köra flera gånger utan fel.
 
 ## Reflektion
+
 **Vad som gick bra.** När jag förstod arbetsfördelningen blev kedjan tydlig: Terraform förbereder och beskriver miljön, och PowerShell gör jobbet utifrån den. Verifieringssteget gav mig ett konkret sätt att se att automatiseringen faktiskt fungerade. Jag förbättrade också projektet under arbetet: först låg användarna direkt i Terraform-koden, men jag flyttade dem till `users.csv` så att data och kod hålls åtskilda. Jag översatte även skriptets kommentarer och loggmeddelanden till engelska för att det ska vara enhetligt.
 
 **Vad som var svårt.** Själva uppsättningen tog mycket tid. Det var nytt att arbeta i WSL, och kommandot `code` fungerade inte i terminalen första gången. Jag löste det genom att installera WSL-tillägget och ansluta via "WSL: Connect to WSL" i VS Code. Med Git råkade jag lägga två filer i en commit, och jag lärde mig att man inte ska skriva om historiken efter att man pushat utan i stället gå vidare med nya commits. Det svåraste i PowerShell var att förstå att `try/catch` inte fångar fel från Linux-kommandon automatiskt, så felkoden måste kontrolleras separat.
 
 **Lärdomar.** Jag har lärt mig att automatisering sparar tid först när den är tillförlitlig, och därför är verifiering och felhantering lika viktigt som själva skapandet. Jag lärde mig också vikten av att dela upp ansvar mellan verktyg och att hålla data utanför koden. Nästa steg skulle vara att utöka kedjan med Ansible för konfigurationen och Python för verifieringen.
+
+**Validering av användarnamn.** När jag testade med användarnamnet `Björn` upptäckte jag att Linux har regler för vilka tecken ett användarnamn får innehålla: små bokstäver, siffror, `_`, `-` och `.`, utan å, ä, ö, versaler eller mellanslag. Jag lade därför till funktionen `Test-ValidUsername`, som kontrollerar namnet innan `useradd` körs och ger ett tydligt felmeddelande. Under arbetet tappade jag också av misstag en del av funktionen `New-SystemUser`, så att inga användare skapades. Det gjorde att jag lärde mig att alltid köra och verifiera skriptet efter varje ändring i stället för att anta att det fungerar. Att kontrollera indata i förväg gör skriptet mer robust, eftersom ett felaktigt namn nu stoppas med ett begripligt fel och inte stoppar resten av körningen.
 
 ## GitHub-länk
 
