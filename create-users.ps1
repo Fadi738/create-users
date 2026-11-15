@@ -59,6 +59,16 @@ function New-SystemUser {
         [string]$Description = "Created by script"
     )
 
+    # Use a default description if none was given
+    if ([string]::IsNullOrWhiteSpace($Description)) {
+        $Description = "Created by script"
+    }
+
+    # Stop early with a clear message if the name is not allowed
+    if (-not (Test-ValidUsername -Name $Name)) {
+        throw "Invalid username '$Name':use only lowercase a-z, digits, No å, ä, ö, spaces or other special characters, and the name must start with a letter"
+    }
+
     if (Test-UserExists -Name $Name) {
         Write-Log "User '$Name' already exists, skipping" "WARN"
         return
@@ -103,6 +113,17 @@ function Remove-SystemUser {
     Write-Log "Removed user '$Name'"
 }
 
+
+# Function 7: Checks that a username follows the Linux naming rules (true/false)
+function Test-ValidUsername {
+    param([Parameter(Mandatory)][string]$Name)
+
+    # Lowercase letters, digits, '_', '-' or '.', and it must start with a letter or '_'
+    return ($Name -cmatch '^[a-z_][a-z0-9_.-]*$')
+}
+
+
+
 # ---------- Main program ----------
 
 # Root privileges are required to create users
@@ -135,7 +156,9 @@ try {
         }
         Write-Log "Verification done: $succeeded of $($users.Count) users OK"
 
+
         if ($succeeded -ne $users.Count) { exit 1 }
+        
     }
 }
 catch {
