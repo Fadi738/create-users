@@ -25,7 +25,9 @@ Projektet visar hela kedjan från konfiguration till färdigt resultat:
 | Fil | Syfte |
 | --- | --- |
 | `users.csv` | Listan med användare (namn och beskrivning) |
-| `main.tf` | Läser `users.csv` och skapar `output/config/users.json` samt loggmappen |
+| `main.tf` | Terraform-konfigurationen: läser `users.csv` och skapar `output/config/users.json` samt loggmappen |
+| `variables.tf` | Variablerna `base_dir` och `users_file` |
+| `outputs.tf` | Outputs som visar sökvägar och användarna efter `terraform apply` |
 | `create-users.ps1` | Läser `users.json`, skapar användarna, verifierar dem och loggar |
 | `.gitignore` | Håller state-filer och genererade filer utanför Git |
 
